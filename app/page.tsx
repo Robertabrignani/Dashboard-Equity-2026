@@ -1,261 +1,210 @@
-import data from '@/data/portfolio.json';
+import Link from 'next/link';
+import data from '@/data/screening.json';
 
-type SummaryCard = {
-  title: string;
-  value: string;
-  subtitle: string;
-  positive: boolean;
-};
-
-type Asset = {
-  key: string;
-  label: string;
-  shortLabel: string;
-  color: string;
-  firstValue: number;
-  lastValue: number;
-  ytdReturn: number;
-};
-
-type SeriesRow = {
-  date: string;
-  [key: string]: string | number | null;
-};
-
-function formatNumber(value: number) {
-  return value.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
-function formatPercent(value: number) {
+function formatPercent(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return '-';
   return `${value >= 0 ? '+' : ''}${value.toLocaleString('pt-BR', {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   })}%`;
 }
 
-function formatDate(dateValue: string) {
-  const date = new Date(dateValue);
-  return date.toLocaleDateString('pt-BR');
+function formatDate(dateValue: string | null | undefined) {
+  if (!dateValue) return '-';
+  return new Date(dateValue).toLocaleDateString('pt-BR');
 }
 
-export default function Home() {
-  const summaryCards = (data.summaryCards ?? []) as SummaryCard[];
-  const assets = (data.assets ?? []) as Asset[];
-  const series = ((data.series ?? []).filter((row) => row?.date)) as SeriesRow[];
+function formatWeight(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return '-';
+  return value.toLocaleString('pt-BR', {
+    style: 'percent',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
-  const latestRow = series[series.length - 1];
-  const recentRows = series.slice(-12);
-  const maxAbsReturn = Math.max(...assets.map((item) => Math.abs(item.ytdReturn)), 1);
+export default function HomePage() {
+  const topRanked = [...(data.ranking?.rows ?? [])]
+    .filter((row) => !row.isBenchmark && row.order != null)
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+    .slice(0, 5);
 
-  const chartWidth = Math.max(assets.length * 96, 560);
-  const latestTableWidth = Math.max(220 + assets.length * 140, 1200);
+  const selectedWeights = data.portfolio?.weights ?? [];
+  const portfolioSummary = data.portfolio?.summary ?? {};
+  const metricCount = data.metrics?.length ?? 0;
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 overflow-x-auto">
-      <header className="bg-[#002d72] text-white shadow-sm">
-        <div className="w-full px-6">
-          <div className="flex h-16 items-center gap-10 overflow-x-auto whitespace-nowrap text-sm font-semibold">
-            <span className="border-b-2 border-sky-400 pb-1">RIO DAS PEDRAS MFO</span>
-            <span className="text-slate-200">Fundos Terceiros</span>
-            <span className="text-slate-300">Dashboard</span>
-            <span className="text-slate-300">Séries Históricas</span>
+    <div className="space-y-6">
+      <section className="rounded-3xl bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="mb-2 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-emerald-700">
+              Dados calculados a partir da base
+            </div>
+            <h1 className="text-3xl font-bold text-[#002d72]">
+              Equity Dashboard — Screening de FIAs
+            </h1>
+            <p className="mt-2 text-sm text-slate-500">
+              Última atualização: <span className="font-semibold text-slate-700">{formatDate(data.updatedAt)}</span>
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            Fonte: <span className="font-semibold">Tbl_VariableData_BloombergMatrix</span>
           </div>
         </div>
-      </header>
+      </section>
 
-      <main className="w-full px-6 py-8">
-        <section className="mb-6 rounded-3xl bg-white p-4 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-emerald-700">
-                Dados exportados da base
-              </div>
-              <h1 className="text-3xl font-bold tracking-tight text-[#002d72]">
-                Dashboard — Fundos Terceiros
-              </h1>
-              <p className="mt-1 text-sm text-slate-500">
-                Última atualização:{' '}
-                <span className="font-semibold text-slate-700">
-                  {latestRow ? formatDate(latestRow.date) : 'Sem dados'}
-                </span>
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              Fonte: <span className="font-semibold">portfolio.json</span>
-            </div>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Fundos monitorados
           </div>
-        </section>
+          <div className="mt-3 text-4xl font-bold text-[#002d72]">{metricCount}</div>
+          <div className="mt-2 text-sm text-slate-500">Inclui benchmarks e fundos do screening</div>
+        </div>
 
-        <section className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
-          {summaryCards.map((card) => (
-            <div key={card.title} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                {card.title}
-              </div>
-              <div
-                className={`mt-3 text-4xl font-bold ${
-                  card.positive ? 'text-emerald-600' : 'text-red-600'
-                }`}
-              >
-                {card.value}
-              </div>
-              <div className="mt-2 text-sm text-slate-500">{card.subtitle}</div>
-            </div>
-          ))}
-        </section>
-
-        <section className="mt-6 grid gap-6 2xl:grid-cols-[1.25fr,0.95fr]">
-          <div className="rounded-3xl bg-white p-5 shadow-sm">
-            <div className="mb-4 border-b border-slate-200 pb-3 text-xl font-bold text-[#002d72]">
-              Todos os fundos e benchmarks
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="min-w-[900px] w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-left text-slate-500">
-                    <th className="pb-3 pr-4 font-semibold">Série</th>
-                    <th className="pb-3 pr-4 font-semibold">Valor inicial</th>
-                    <th className="pb-3 pr-4 font-semibold">Valor atual</th>
-                    <th className="pb-3 pr-4 font-semibold">Retorno YTD</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {assets.map((item) => (
-                    <tr key={item.key} className="border-b border-slate-100">
-                      <td className="py-3 pr-4 min-w-[260px]">
-                        <div className="flex items-center gap-3">
-                          <span
-                            className="inline-block h-3 w-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="font-semibold text-slate-800 whitespace-nowrap">
-                            {item.label}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4 text-slate-600 whitespace-nowrap">
-                        {formatNumber(item.firstValue)}
-                      </td>
-                      <td className="py-3 pr-4 text-slate-600 whitespace-nowrap">
-                        {formatNumber(item.lastValue)}
-                      </td>
-                      <td
-                        className={`py-3 pr-4 font-semibold whitespace-nowrap ${
-                          item.ytdReturn >= 0 ? 'text-emerald-600' : 'text-red-600'
-                        }`}
-                      >
-                        {formatPercent(item.ytdReturn)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Portfolio 1Y Anualizado
           </div>
-
-          <div className="rounded-3xl bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <div className="text-xl font-bold text-[#002d72]">Retorno YTD</div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Todas as séries
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <div
-                className="flex h-80 items-end gap-4 pt-6"
-                style={{ minWidth: `${chartWidth}px` }}
-              >
-                {assets.map((item) => {
-                  const height = Math.max((Math.abs(item.ytdReturn) / maxAbsReturn) * 180, 20);
-                  const positive = item.ytdReturn >= 0;
-
-                  return (
-                    <div
-                      key={item.key}
-                      className="flex min-w-[84px] flex-col items-center justify-end gap-2"
-                    >
-                      <div
-                        className={`text-sm font-bold ${
-                          positive ? 'text-emerald-600' : 'text-red-600'
-                        }`}
-                      >
-                        {formatPercent(item.ytdReturn)}
-                      </div>
-
-                      <div className="flex h-56 items-end">
-                        <div
-                          className={`w-16 rounded-t-xl ${
-                            positive ? 'bg-emerald-600' : 'bg-red-600'
-                          }`}
-                          style={{ height }}
-                        />
-                      </div>
-
-                      <div className="w-20 text-center text-xs font-semibold text-slate-500 break-words">
-                        {item.shortLabel}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+          <div className="mt-3 text-4xl font-bold text-emerald-600">
+            {formatPercent((portfolioSummary.return1YAnn ?? 0) * 100)}
           </div>
-        </section>
+          <div className="mt-2 text-sm text-slate-500">
+            IBOV: {formatPercent((portfolioSummary.ibov1YAnn ?? 0) * 100)} | CDI:{' '}
+            {formatPercent((portfolioSummary.cdi1YAnn ?? 0) * 100)}
+          </div>
+        </div>
 
-        <section className="mt-6 rounded-3xl bg-white p-5 shadow-sm">
-          <div className="mb-4 border-b border-slate-200 pb-3 text-xl font-bold text-[#002d72]">
-            Últimos pontos da série
+        <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Portfolio 5Y Anualizado
+          </div>
+          <div className="mt-3 text-4xl font-bold text-emerald-600">
+            {formatPercent((portfolioSummary.return5YAnn ?? 0) * 100)}
+          </div>
+          <div className="mt-2 text-sm text-slate-500">
+            Máx DD 5Y: {formatPercent((portfolioSummary.maxDrawdown5Y ?? 0) * 100)}
+          </div>
+        </div>
+
+        <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Portfolio Sharpe 1Y
+          </div>
+          <div className="mt-3 text-4xl font-bold text-[#002d72]">
+            {(portfolioSummary.sharpe1Y ?? 0).toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </div>
+          <div className="mt-2 text-sm text-slate-500">
+            Vol 360D: {formatPercent((portfolioSummary.vol360D ?? 0) * 100)}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
+        <div className="rounded-3xl bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
+            <h2 className="text-xl font-bold text-[#002d72]">Top 5 do Ranking</h2>
+            <Link href="/ranking" className="text-sm font-semibold text-sky-700 hover:text-sky-900">
+              Ver tela completa
+            </Link>
           </div>
 
           <div className="overflow-x-auto">
-            <table
-              className="text-sm"
-              style={{ minWidth: `${latestTableWidth}px`, width: '100%' }}
-            >
+            <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-left text-slate-500">
-                  <th className="pb-3 pr-4 font-semibold sticky left-0 bg-white min-w-[140px]">
-                    Data
-                  </th>
-                  {assets.map((asset) => (
-                    <th
-                      key={asset.key}
-                      className="pb-3 pr-4 font-semibold whitespace-nowrap min-w-[140px]"
-                    >
-                      {asset.shortLabel}
-                    </th>
-                  ))}
+                  <th className="pb-3 pr-4 font-semibold">Ordem</th>
+                  <th className="pb-3 pr-4 font-semibold">Fundo</th>
+                  <th className="pb-3 pr-4 font-semibold">Score</th>
+                  <th className="pb-3 pr-4 font-semibold">1Y</th>
+                  <th className="pb-3 pr-4 font-semibold">Sharpe 1Y</th>
                 </tr>
               </thead>
               <tbody>
-                {recentRows.map((row, index) => (
-                  <tr key={`${row.date}-${index}`} className="border-b border-slate-100">
-                    <td className="py-3 pr-4 text-slate-700 sticky left-0 bg-white whitespace-nowrap">
-                      {formatDate(row.date)}
+                {topRanked.map((row) => (
+                  <tr key={row.sqlColumn} className="border-b border-slate-100">
+                    <td className="py-3 pr-4 font-semibold text-[#002d72]">{row.order}</td>
+                    <td className="py-3 pr-4 font-medium text-slate-800">{row.name}</td>
+                    <td className="py-3 pr-4 text-slate-600">
+                      {row.aggregateScore?.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </td>
-                    {assets.map((asset) => (
-                      <td key={asset.key} className="py-3 pr-4 text-slate-600 whitespace-nowrap">
-                        {row[asset.key] == null ? '-' : formatNumber(Number(row[asset.key]))}
-                      </td>
-                    ))}
+                    <td className="py-3 pr-4 text-emerald-600">
+                      {formatPercent((row.metrics?.return1Y ?? 0) * 100)}
+                    </td>
+                    <td className="py-3 pr-4 text-slate-600">
+                      {(row.metrics?.sharpe1Y ?? 0).toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </section>
+        </div>
 
-        <footer className="mt-6 rounded-3xl bg-white p-6 text-xs leading-6 text-slate-500 shadow-sm">
-          Material meramente informativo, com uso restrito, sem constituição de oferta ou recomendação individualizada de investimento.
-          Rentabilidade passada não representa garantia de resultados futuros.
-        </footer>
-      </main>
+        <div className="rounded-3xl bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
+            <h2 className="text-xl font-bold text-[#002d72]">Pesos do Portfólio</h2>
+            <Link href="/portfolio" className="text-sm font-semibold text-sky-700 hover:text-sky-900">
+              Ver tela completa
+            </Link>
+          </div>
+
+          <div className="space-y-3">
+            {selectedWeights.map((item) => (
+              <div
+                key={item.sqlColumn}
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+              >
+                <span className="text-sm font-medium text-slate-800">{item.name}</span>
+                <span className="text-sm font-semibold text-[#002d72]">{formatWeight(item.weight)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <Link
+          href="/metrics"
+          className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          <div className="text-lg font-bold text-[#002d72]">Metrics</div>
+          <p className="mt-2 text-sm text-slate-500">
+            Todas as métricas por fundo, com quartis, benchmarks e fundos selecionados destacados.
+          </p>
+        </Link>
+
+        <Link
+          href="/ranking"
+          className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          <div className="text-lg font-bold text-[#002d72]">Ranking</div>
+          <p className="mt-2 text-sm text-slate-500">
+            Ajuste os pesos de cada métrica e recalcule o score ponderado em tempo real.
+          </p>
+        </Link>
+
+        <Link
+          href="/portfolio"
+          className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          <div className="text-lg font-bold text-[#002d72]">Portfolio</div>
+          <p className="mt-2 text-sm text-slate-500">
+            Pesos atuais, métricas consolidadas e gráfico de performance do portfólio versus IBOV e CDI.
+          </p>
+        </Link>
+      </section>
     </div>
   );
 }
