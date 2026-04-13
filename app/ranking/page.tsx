@@ -17,6 +17,25 @@ type WeightKey =
 
 type WeightState = Record<WeightKey, number>;
 
+type RankingRow = {
+  sqlColumn: string;
+  ticker: string;
+  shortTicker: string;
+  name: string;
+  isBenchmark: boolean;
+  isSelected: boolean;
+  metrics?: Record<string, number | null>;
+  quartiles?: Record<string, number | null>;
+  ranks?: Record<string, number | null>;
+  aggregateScore?: number | null;
+  order?: number | null;
+};
+
+type RankedRowWithDynamic = RankingRow & {
+  dynamicScore: number | null;
+  dynamicOrder: number | null;
+};
+
 const LABELS: Record<WeightKey, string> = {
   return1Y: '1Y Return',
   return3YAnn: '3Y Return',
@@ -57,6 +76,14 @@ function formatPercent(value: number | null | undefined) {
   })}%`;
 }
 
+function formatNumber(value: number | null | undefined, digits = 2) {
+  if (value == null || !Number.isFinite(value)) return '-';
+  return value.toLocaleString('pt-BR', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+}
+
 export default function RankingPage() {
   const defaultWeights = data.ranking.defaultWeights as WeightState;
 
@@ -65,9 +92,9 @@ export default function RankingPage() {
   const normalizedWeights = useMemo(() => normalizeWeights(weights), [weights]);
 
   const rows = useMemo(() => {
-    const sourceRows = (data.ranking.rows ?? []).map((row) => ({ ...row }));
+    const sourceRows = (data.ranking.rows ?? []) as RankingRow[];
 
-    const recalculated = sourceRows.map((row) => {
+    const recalculated: RankedRowWithDynamic[] = sourceRows.map((row) => {
       if (row.isBenchmark) {
         return { ...row, dynamicScore: null, dynamicOrder: null };
       }
@@ -83,12 +110,16 @@ export default function RankingPage() {
       return {
         ...row,
         dynamicScore,
+        dynamicOrder: null,
       };
     });
 
     const ranked = recalculated
-      .filter((row) => !row.isBenchmark && row.dynamicScore != null)
-      .sort((a, b) => a.dynamicScore - b.dynamicScore)
+      .filter(
+        (row): row is RankedRowWithDynamic =>
+          !row.isBenchmark && row.dynamicScore !== null && Number.isFinite(row.dynamicScore)
+      )
+      .sort((a, b) => (a.dynamicScore ?? 999999) - (b.dynamicScore ?? 999999))
       .map((row, index) => ({
         ...row,
         dynamicOrder: index + 1,
@@ -207,9 +238,9 @@ export default function RankingPage() {
                     <td className="py-3 pr-4">{formatPercent(row.metrics?.return1Y)}</td>
                     <td className="py-3 pr-4">{formatPercent(row.metrics?.return3YAnn)}</td>
                     <td className="py-3 pr-4">{formatPercent(row.metrics?.return5YAnn)}</td>
-                    <td className="py-3 pr-4">{row.metrics?.sharpe1Y?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '-'}</td>
-                    <td className="py-3 pr-4">{row.metrics?.sharpe3Y?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '-'}</td>
-                    <td className="py-3 pr-4">{row.metrics?.sharpe5Y?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '-'}</td>
+                    <td className="py-3 pr-4">{formatNumber(row.metrics?.sharpe1Y)}</td>
+                    <td className="py-3 pr-4">{formatNumber(row.metrics?.sharpe3Y)}</td>
+                    <td className="py-3 pr-4">{formatNumber(row.metrics?.sharpe5Y)}</td>
                     <td className="py-3 pr-4">{formatPercent(row.metrics?.vol90D)}</td>
                     <td className="py-3 pr-4">{formatPercent(row.metrics?.vol360D)}</td>
                     <td className="py-3 pr-4">{formatPercent(row.metrics?.maxDrawdown3Y)}</td>
