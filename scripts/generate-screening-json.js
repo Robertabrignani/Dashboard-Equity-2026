@@ -8,7 +8,8 @@ const {
   CDI_SQL_COLUMN,
   DEFAULT_WEIGHTS,
   PORTFOLIO_WEIGHTS,
-  HRP_WEIGHTS,
+  BACKTEST_HRP_WEIGHTS,
+  BACKTEST_MPT_WEIGHTS,
   METRIC_DIRECTIONS,
   SQL_START_DATE,
 } = require('../config/screening.config');
@@ -39,10 +40,6 @@ function sampleStd(values) {
   const variance =
     values.reduce((acc, value) => acc + (value - avg) ** 2, 0) / (values.length - 1);
   return Math.sqrt(variance);
-}
-
-function product(values) {
-  return values.reduce((acc, value) => acc * value, 1);
 }
 
 function round(value, digits = 6) {
@@ -80,6 +77,7 @@ function buildReturnSeriesFromLevelSeries(levelSeries) {
   for (let i = 1; i < levelSeries.length; i += 1) {
     const previous = levelSeries[i - 1].value;
     const current = levelSeries[i].value;
+
     if (
       previous == null ||
       current == null ||
@@ -303,6 +301,69 @@ function calculateAnnualizedFromNavSeries(navSeries, tradingDays) {
   return (end / start) ** (252 / tradingDays) - 1;
 }
 
+function calculateVolFromReturnSeries(returnSeries, tradingDays) {
+  if (returnSeries.length < tradingDays) return null;
+  const windowReturns = returnSeries.slice(-tradingDays).map((item) => item.return);
+  const std = sampleStd(windowReturns);
+  if (std == null) return null;
+  return std * Math.sqrt(252);
+}
+
+function calculateSharpeFromNavAndCdi(navSeries, cdiNavSeries, tradingDays) {
+  const portfolioAnnualized = calculateAnnualizedFromNavSeries(navSeries, tradingDays);
+  const cdiAnnualized = calculateAnnualizedFromNavSeries(cdiNavSeries, tradingDays);
+  const portfolioReturnSeries = navSeries.map((item) => ({
+    date: item.date,
+    return: item.return,
+  }));
+  const vol = calculateVolFromReturnSeries(portfolioReturnSeries, tradingDays);
+
+  if (portfolioAnnualized == null || cdiAnnualized == null || vol == null || vol === 0) {
+    return null;
+  }
+
+  return (portfolioAnnualized - cdiAnnualized) / vol;
+}
+
+function buildSummaryFromNav(navSeries, cdiNavSeries) {
+  return {
+    return1YAnn: round(calculateAnnualizedFromNavSeries(navSeries, 252), 8),
+    return3YAnn: round(calculateAnnualizedFromNavSeries(navSeries, 756), 8),
+    return5YAnn: round(calculateAnnualizedFromNavSeries(navSeries, 1260), 8),
+    sharpe1Y: round(calculateSharpeFromNavAndCdi(navSeries, cdiNavSeries, 252), 8),
+    sharpe3Y: round(calculateSharpeFromNavAndCdi(navSeries, cdiNavSeries, 756), 8),
+    sharpe5Y: round(calculateSharpeFromNavAndCdi(navSeries, cdiNavSeries, 1260), 8),
+    vol1Y: round(
+      calculateVolFromReturnSeries(
+        navSeries.map((item) => ({ date: item.date, return: item.return })),
+        252
+      ),
+      8
+    ),
+    vol3Y: round(
+      calculateVolFromReturnSeries(
+        navSeries.map((item) => ({ date: item.date, return: item.return })),
+        756
+      ),
+      8
+    ),
+    vol5Y: round(
+      calculateVolFromReturnSeries(
+        navSeries.map((item) => ({ date: item.date, return: item.return })),
+        1260
+      ),
+      8
+    ),
+    maxDrawdown5Y: round(
+      (() => {
+        const drawdowns = navSeries.map((item) => item.drawdown).filter((value) => value != null);
+        return drawdowns.length ? Math.min(...drawdowns) : null;
+      })(),
+      8
+    ),
+  };
+}
+
 function correlation(valuesX, valuesY) {
   if (valuesX.length !== valuesY.length || valuesX.length < 2) return null;
   const meanX = mean(valuesX);
@@ -418,8 +479,23 @@ function buildAverageLinkageFromCorrelation(matrix, labels) {
   return linkage;
 }
 
-function formatMetricNumber(value) {
-  return value == null ? null : round(value, 6);
+function buildBacktestBlock(rows, weights, cdiSqlColumn) {
+  const normalizedWeights = normalizeWeights(weights);
+  const returnSeries = buildPortfolioReturnSeries(rows, normalizedWeights, cdiSqlColumn);
+  const navSeries = buildNavSeriesFromReturns(returnSeries, 1);
+
+  return {
+    weights: Object.entries(normalizedWeights).map(([sqlColumn, weight]) => {
+      const asset = ASSETS.find((item) => item.sqlColumn === sqlColumn);
+      return {
+        sqlColumn,
+        name: asset ? asset.name : sqlColumn,
+        weight: round(weight, 8),
+      };
+    }),
+    returnSeries,
+    navSeries,
+  };
 }
 
 async function main() {
@@ -446,7 +522,7 @@ async function main() {
 
   const query = `
     SELECT ${columns.join(',\n           ')}
-    FROM Tbl_VariableData_BloombergMatrix
+    FROM [RDP_Database].[dbo].[Tbl_VariableData_BloombergMatrix]
     WHERE [date] >= '${SQL_START_DATE}'
     ORDER BY [date] ASC
   `;
@@ -462,9 +538,7 @@ async function main() {
 
   const normalizedRows = rawRows
     .map((row) => {
-      const normalized = {
-        date: normalizeDate(row.date),
-      };
+      const normalized = { date: normalizeDate(row.date) };
 
       for (const asset of ASSETS) {
         normalized[asset.sqlColumn] = toPlainNumber(row[asset.sqlColumn]);
@@ -480,6 +554,7 @@ async function main() {
 
   const cdiSeries = buildSeries(rows, CDI_SQL_COLUMN);
   const cdiReturnSeries = buildReturnSeriesFromLevelSeries(cdiSeries);
+  const cdiNavSeries = buildNavSeriesFromReturns(cdiReturnSeries, 1);
 
   const metricRows = ASSETS.map((asset) => {
     const levelSeries = buildSeries(rows, asset.sqlColumn);
@@ -508,7 +583,7 @@ async function main() {
       inceptionDate: levelSeries.length ? levelSeries[0].date : null,
       updatedLast: levelSeries.length ? levelSeries[levelSeries.length - 1].date : null,
       metrics: Object.fromEntries(
-        Object.entries(metrics).map(([key, value]) => [key, formatMetricNumber(value)])
+        Object.entries(metrics).map(([key, value]) => [key, round(value, 8)])
       ),
     };
   });
@@ -545,25 +620,24 @@ async function main() {
     };
   });
 
-  const rankingRows = metricsRowsWithDecorations
-    .map((row) => {
-      const aggregateScore = row.isBenchmark
-        ? null
-        : calculateWeightedScore(row.ranks, DEFAULT_WEIGHTS);
+  const rankingRows = metricsRowsWithDecorations.map((row) => {
+    const aggregateScore = row.isBenchmark
+      ? null
+      : calculateWeightedScore(row.ranks, DEFAULT_WEIGHTS);
 
-      return {
-        sqlColumn: row.sqlColumn,
-        ticker: row.ticker,
-        shortTicker: row.shortTicker,
-        name: row.name,
-        isBenchmark: row.isBenchmark,
-        isSelected: row.isSelected,
-        metrics: row.metrics,
-        quartiles: row.quartiles,
-        ranks: row.ranks,
-        aggregateScore: aggregateScore == null ? null : round(aggregateScore, 6),
-      };
-    });
+    return {
+      sqlColumn: row.sqlColumn,
+      ticker: row.ticker,
+      shortTicker: row.shortTicker,
+      name: row.name,
+      isBenchmark: row.isBenchmark,
+      isSelected: row.isSelected,
+      metrics: row.metrics,
+      quartiles: row.quartiles,
+      ranks: row.ranks,
+      aggregateScore: aggregateScore == null ? null : round(aggregateScore, 6),
+    };
+  });
 
   const sortableRankingRows = rankingRows
     .filter((row) => !row.isBenchmark && row.aggregateScore != null)
@@ -594,35 +668,15 @@ async function main() {
   const bovaReturnSeries = buildReturnSeriesFromLevelSeries(bovaSeries);
   const bovaNavSeries = buildNavSeriesFromReturns(bovaReturnSeries, 1);
 
-  const cdiNavSeries = buildNavSeriesFromReturns(cdiReturnSeries, 1);
-
+  const portfolioSummaryBase = buildSummaryFromNav(portfolioNavSeries, cdiNavSeries);
   const portfolioSummary = {
-    return1YAnn: formatMetricNumber(calculateAnnualizedFromNavSeries(portfolioNavSeries, 252)),
-    return3YAnn: formatMetricNumber(calculateAnnualizedFromNavSeries(portfolioNavSeries, 756)),
-    return5YAnn: formatMetricNumber(calculateAnnualizedFromNavSeries(portfolioNavSeries, 1260)),
-    ibov1YAnn: formatMetricNumber(calculateAnnualizedFromNavSeries(bovaNavSeries, 252)),
-    ibov3YAnn: formatMetricNumber(calculateAnnualizedFromNavSeries(bovaNavSeries, 756)),
-    ibov5YAnn: formatMetricNumber(calculateAnnualizedFromNavSeries(bovaNavSeries, 1260)),
-    cdi1YAnn: formatMetricNumber(calculateAnnualizedFromNavSeries(cdiNavSeries, 252)),
-    cdi3YAnn: formatMetricNumber(calculateAnnualizedFromNavSeries(cdiNavSeries, 756)),
-    cdi5YAnn: formatMetricNumber(calculateAnnualizedFromNavSeries(cdiNavSeries, 1260)),
-    sharpe1Y: formatMetricNumber(calculateWindowSharpe(
-      portfolioNavSeries.map((item) => ({ date: item.date, value: item.nav })),
-      cdiNavSeries.map((item) => ({ date: item.date, value: item.nav })),
-      252
-    )),
-    vol360D: formatMetricNumber(
-      calculateWindowVolatility(
-        portfolioReturnSeries.map((item) => ({ date: item.date, return: item.return })),
-        360
-      )
-    ),
-    maxDrawdown5Y: formatMetricNumber(
-      calculateWindowMaxDrawdown(
-        portfolioNavSeries.map((item) => ({ date: item.date, value: item.nav })),
-        Math.min(1260, portfolioNavSeries.length - 1)
-      )
-    ),
+    ...portfolioSummaryBase,
+    ibov1YAnn: round(calculateAnnualizedFromNavSeries(bovaNavSeries, 252), 8),
+    ibov3YAnn: round(calculateAnnualizedFromNavSeries(bovaNavSeries, 756), 8),
+    ibov5YAnn: round(calculateAnnualizedFromNavSeries(bovaNavSeries, 1260), 8),
+    cdi1YAnn: round(calculateAnnualizedFromNavSeries(cdiNavSeries, 252), 8),
+    cdi3YAnn: round(calculateAnnualizedFromNavSeries(cdiNavSeries, 756), 8),
+    cdi5YAnn: round(calculateAnnualizedFromNavSeries(cdiNavSeries, 1260), 8),
   };
 
   const portfolioSeries = portfolioNavSeries.map((item, index) => ({
@@ -634,19 +688,24 @@ async function main() {
     cdiNav: cdiNavSeries[index] ? round(cdiNavSeries[index].nav, 8) : null,
   }));
 
-  const normalizedHrpWeights = normalizeWeights(HRP_WEIGHTS);
-  const hrpReturnSeries = buildPortfolioReturnSeries(rows, normalizedHrpWeights, CDI_SQL_COLUMN);
-  const hrpNavSeries = buildNavSeriesFromReturns(hrpReturnSeries, 1);
+  const hrpBlock = buildBacktestBlock(rows, BACKTEST_HRP_WEIGHTS, CDI_SQL_COLUMN);
+  const mptBlock = buildBacktestBlock(rows, BACKTEST_MPT_WEIGHTS, CDI_SQL_COLUMN);
 
-  const hrpAssetColumns = Object.keys(normalizedHrpWeights).filter((key) => key !== 'CASH');
+  const correlationAssetColumns = Array.from(
+    new Set([
+      ...Object.keys(BACKTEST_HRP_WEIGHTS),
+      ...Object.keys(BACKTEST_MPT_WEIGHTS),
+    ])
+  ).filter((key) => key !== 'CASH');
+
   const returnSeriesByAsset = {};
-  for (const sqlColumn of hrpAssetColumns) {
+  for (const sqlColumn of correlationAssetColumns) {
     const levelSeries = buildSeries(rows, sqlColumn);
     returnSeriesByAsset[sqlColumn] = buildReturnSeriesFromLevelSeries(levelSeries);
   }
 
-  const correlationMatrix = buildCorrelationMatrix(returnSeriesByAsset, hrpAssetColumns);
-  const correlationLabels = hrpAssetColumns.map((sqlColumn) => {
+  const correlationMatrix = buildCorrelationMatrix(returnSeriesByAsset, correlationAssetColumns);
+  const correlationLabels = correlationAssetColumns.map((sqlColumn) => {
     const asset = ASSETS.find((item) => item.sqlColumn === sqlColumn);
     return asset ? asset.name : sqlColumn;
   });
@@ -659,7 +718,7 @@ async function main() {
   const screeningJson = {
     updatedAt: rows[rows.length - 1]?.date ?? null,
     source: {
-      table: 'Tbl_VariableData_BloombergMatrix',
+      table: '[RDP_Database].[dbo].[Tbl_VariableData_BloombergMatrix]',
       startDate: SQL_START_DATE,
       rowCountRaw: normalizedRows.length,
       rowCountFiltered: rows.length,
@@ -667,7 +726,10 @@ async function main() {
     weights: {
       ranking: DEFAULT_WEIGHTS,
       portfolio: normalizedPortfolioWeights,
-      hrp: normalizedHrpWeights,
+      backtest: {
+        hrp: normalizeWeights(BACKTEST_HRP_WEIGHTS),
+        mpt: normalizeWeights(BACKTEST_MPT_WEIGHTS),
+      },
     },
     metrics: metricsRowsWithDecorations,
     ranking: {
@@ -695,32 +757,26 @@ async function main() {
       series: portfolioSeries,
     },
     backtest: {
-      hrpWeights: Object.entries(normalizedHrpWeights).map(([sqlColumn, weight]) => {
-        const asset = ASSETS.find((item) => item.sqlColumn === sqlColumn);
-        return {
-          sqlColumn,
-          name: asset ? asset.name : sqlColumn,
-          weight: round(weight, 8),
-        };
-      }),
-      summary: {
-        return5YAnn: formatMetricNumber(calculateAnnualizedFromNavSeries(hrpNavSeries, Math.min(1260, hrpNavSeries.length))),
-        vol360D: formatMetricNumber(
-          calculateWindowVolatility(hrpReturnSeries, Math.min(360, hrpReturnSeries.length))
-        ),
-        maxDrawdown5Y: formatMetricNumber(
-          calculateWindowMaxDrawdown(
-            hrpNavSeries.map((item) => ({ date: item.date, value: item.nav })),
-            Math.min(1260, Math.max(hrpNavSeries.length - 1, 0))
-          )
-        ),
+      hrp: {
+        weights: hrpBlock.weights,
+        summary: buildSummaryFromNav(hrpBlock.navSeries, cdiNavSeries),
+        series: hrpBlock.navSeries.map((item) => ({
+          date: item.date,
+          nav: round(item.nav, 8),
+          drawdown: round(item.drawdown, 8),
+          dailyReturn: round(item.return, 8),
+        })),
       },
-      series: hrpNavSeries.map((item) => ({
-        date: item.date,
-        nav: round(item.nav, 8),
-        drawdown: round(item.drawdown, 8),
-        dailyReturn: round(item.return, 8),
-      })),
+      mpt: {
+        weights: mptBlock.weights,
+        summary: buildSummaryFromNav(mptBlock.navSeries, cdiNavSeries),
+        series: mptBlock.navSeries.map((item) => ({
+          date: item.date,
+          nav: round(item.nav, 8),
+          drawdown: round(item.drawdown, 8),
+          dailyReturn: round(item.return, 8),
+        })),
+      },
       correlation: {
         labels: correlationLabels,
         matrix: correlationMatrix.map((row) => row.map((value) => round(value, 6))),

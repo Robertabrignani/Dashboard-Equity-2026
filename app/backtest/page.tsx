@@ -1,4 +1,9 @@
+'use client';
+
+import { useMemo, useState } from 'react';
 import data from '@/data/screening.json';
+
+type BacktestMode = 'hrp' | 'mpt';
 
 function formatPercent(value: number | null | undefined) {
   if (value == null || !Number.isFinite(value)) return '-';
@@ -62,11 +67,17 @@ function heatmapClass(value: number | null | undefined) {
 }
 
 export default function BacktestPage() {
-  const backtest = data.backtest;
-  const weights = backtest?.hrpWeights ?? [];
-  const summary = backtest?.summary ?? {};
-  const series = (backtest?.series ?? []) as BacktestSeriesRow[];
-  const correlation = backtest?.correlation ?? {
+  const [mode, setMode] = useState<BacktestMode>('hrp');
+
+  const backtestData = useMemo(() => {
+    return mode === 'hrp' ? data.backtest?.hrp : data.backtest?.mpt;
+  }, [mode]);
+
+  const weights = backtestData?.weights ?? [];
+  const summary = backtestData?.summary ?? {};
+  const series = (backtestData?.series ?? []) as BacktestSeriesRow[];
+
+  const correlation = data.backtest?.correlation ?? {
     labels: [],
     matrix: [],
     linkage: [],
@@ -92,30 +103,58 @@ export default function BacktestPage() {
   return (
     <div className="space-y-6">
       <section className="rounded-3xl bg-white p-6 shadow-sm">
-        <h1 className="text-3xl font-bold text-[#002d72]">Backtest</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Backtest histórico com pesos HRP, série acumulada, correlação entre fundos e estrutura
-          para dendrograma.
-        </p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-[#002d72]">Backtest</h1>
+            <p className="mt-2 text-sm text-slate-500">
+              Backtest histórico com dois métodos de alocação: HRP e MPT.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
+            <button
+              type="button"
+              onClick={() => setMode('hrp')}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold ${
+                mode === 'hrp'
+                  ? 'bg-[#002d72] text-white'
+                  : 'bg-white text-slate-700'
+              }`}
+            >
+              HRP
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('mpt')}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold ${
+                mode === 'mpt'
+                  ? 'bg-[#002d72] text-white'
+                  : 'bg-white text-slate-700'
+              }`}
+            >
+              MPT
+            </button>
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Retorno anualizado
+            Retorno anualizado 5Y
           </div>
           <div className="mt-3 text-4xl font-bold text-emerald-600">
             {formatPercent(summary.return5YAnn)}
           </div>
-          <div className="mt-2 text-sm text-slate-500">Baseado na série histórica HRP</div>
+          <div className="mt-2 text-sm text-slate-500">Baseado na série histórica do método</div>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Volatilidade 360D
+            Volatilidade 5Y
           </div>
           <div className="mt-3 text-4xl font-bold text-[#002d72]">
-            {formatPercent(summary.vol360D)}
+            {formatPercent(summary.vol5Y)}
           </div>
           <div className="mt-2 text-sm text-slate-500">Desvio padrão anualizado</div>
         </div>
@@ -127,14 +166,14 @@ export default function BacktestPage() {
           <div className="mt-3 text-4xl font-bold text-rose-600">
             {formatPercent(summary.maxDrawdown5Y)}
           </div>
-          <div className="mt-2 text-sm text-slate-500">Pior drawdown observado na janela</div>
+          <div className="mt-2 text-sm text-slate-500">Pior drawdown observado</div>
         </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.9fr,1.1fr]">
         <div className="rounded-3xl bg-white p-5 shadow-sm">
           <div className="mb-4 border-b border-slate-200 pb-3 text-xl font-bold text-[#002d72]">
-            Pesos HRP
+            Pesos — {mode.toUpperCase()}
           </div>
 
           <div className="space-y-3">
@@ -154,7 +193,7 @@ export default function BacktestPage() {
 
         <div className="rounded-3xl bg-white p-5 shadow-sm">
           <div className="mb-4 border-b border-slate-200 pb-3 text-xl font-bold text-[#002d72]">
-            Performance histórica do backtest
+            Performance histórica do backtest — {mode.toUpperCase()}
           </div>
 
           {allValidValues.length === 0 ? (
@@ -174,7 +213,7 @@ export default function BacktestPage() {
 
           <div className="mt-4 flex items-center gap-2 text-sm">
             <span className="h-3 w-3 rounded-full bg-[#002d72]" />
-            <span>Backtest HRP</span>
+            <span>Backtest {mode.toUpperCase()}</span>
           </div>
         </div>
       </section>
@@ -266,8 +305,7 @@ export default function BacktestPage() {
         </div>
 
         <p className="mt-4 text-sm text-slate-500">
-          Essa tabela já traz a estrutura de linkage que pode ser convertida em um dendrograma
-          visual mais sofisticado na próxima iteração.
+          Essa tabela traz a estrutura de linkage usada para o dendrograma.
         </p>
       </section>
     </div>

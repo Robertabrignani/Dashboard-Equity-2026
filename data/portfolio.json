@@ -2,25 +2,25 @@
   "summaryCards": [
     {
       "title": "Dynamo (YTD)",
-      "value": "+10.4%",
+      "value": "+14.1%",
       "subtitle": "Desde 01/01/2026",
       "positive": true
     },
     {
       "title": "Atmos (YTD)",
-      "value": "+3.2%",
+      "value": "+8.8%",
       "subtitle": "Desde 01/01/2026",
       "positive": true
     },
     {
       "title": "Ibovespa (YTD)",
-      "value": "+19.1%",
+      "value": "+23.7%",
       "subtitle": "Desde 01/01/2026",
       "positive": true
     },
     {
       "title": "CDI (YTD)",
-      "value": "+3.7%",
+      "value": "+3.9%",
       "subtitle": "Desde 01/01/2026",
       "positive": true
     }
@@ -32,8 +32,8 @@
       "shortLabel": "CDI",
       "color": "#1e3a8a",
       "firstValue": 54253.4,
-      "lastValue": 56256.99,
-      "ytdReturn": 3.693022004150892
+      "lastValue": 56379.21,
+      "ytdReturn": 3.918298208038573
     },
     {
       "key": "IBOV Index",
@@ -41,8 +41,8 @@
       "shortLabel": "Ibovespa",
       "color": "#2563eb",
       "firstValue": 161125.37,
-      "lastValue": 191922.86,
-      "ytdReturn": 19.113991794091767
+      "lastValue": 199295.95,
+      "ytdReturn": 23.689987492348365
     },
     {
       "key": "RPDRFIA BZ EQUITY",
@@ -50,8 +50,8 @@
       "shortLabel": "Rio das Pedras",
       "color": "#0f766e",
       "firstValue": 2.529238,
-      "lastValue": 2.789076,
-      "ytdReturn": 10.273370872966492
+      "lastValue": 2.868955,
+      "ytdReturn": 13.43159481235061
     },
     {
       "key": "DYNCODO BZ EQUITY",
@@ -59,8 +59,8 @@
       "shortLabel": "Dynamo",
       "color": "#d97706",
       "firstValue": 1799.21456,
-      "lastValue": 1987.026138,
-      "ytdReturn": 10.43853146675291
+      "lastValue": 2052.349647,
+      "ytdReturn": 14.069199562280122
     },
     {
       "key": "SPXFALC BZ EQUITY",
@@ -68,8 +68,8 @@
       "shortLabel": "SPX Falcon",
       "color": "#dc2626",
       "firstValue": 7.710812,
-      "lastValue": 8.1667482,
-      "ytdReturn": 5.912946652051709
+      "lastValue": 8.3187708,
+      "ytdReturn": 7.884497767550291
     },
     {
       "key": "TRUXILB BZ EQUITY",
@@ -77,8 +77,8 @@
       "shortLabel": "Truxt",
       "color": "#7c3aed",
       "firstValue": 2.935855,
-      "lastValue": 3.150779,
-      "ytdReturn": 7.320661272440221
+      "lastValue": 3.437302,
+      "ytdReturn": 17.080101026787766
     },
     {
       "key": "NACFFIA BZ EQUITY",
@@ -86,8 +86,8 @@
       "shortLabel": "Navi",
       "color": "#0891b2",
       "firstValue": 4.1801271,
-      "lastValue": 4.5511499,
-      "ytdReturn": 8.875873654655141
+      "lastValue": 4.7143252,
+      "ytdReturn": 12.77947027017432
     },
     {
       "key": "ATMOSAC BZ EQUITY",
@@ -95,8 +95,8 @@
       "shortLabel": "Atmos",
       "color": "#65a30d",
       "firstValue": 1138.5094897,
-      "lastValue": 1174.9096743,
-      "ytdReturn": 3.197178849127691
+      "lastValue": 1238.1547551,
+      "ytdReturn": 8.75225602434433
     },
     {
       "key": "STUFICF BZ EQUITY",
@@ -104,8 +104,8 @@
       "shortLabel": "Studio",
       "color": "#be123c",
       "firstValue": 4.1441617,
-      "lastValue": 4.3055824,
-      "ytdReturn": 3.8951351729349826
+      "lastValue": 4.5131744,
+      "ytdReturn": 8.90439916955943
     },
     {
       "key": "BSCAPLB BZ EQUITY",
@@ -113,8 +113,8 @@
       "shortLabel": "Brasil Capital",
       "color": "#475569",
       "firstValue": 3.11966,
-      "lastValue": 3.359573,
-      "ytdReturn": 7.690357282524385
+      "lastValue": 3.481031,
+      "ytdReturn": 11.58366616874915
     },
     {
       "key": "CSH2182 BZ EQUITY",
@@ -122,8 +122,8 @@
       "shortLabel": "Compass 2182",
       "color": "#9333ea",
       "firstValue": 2.3122054,
-      "lastValue": 2.519492,
-      "ytdReturn": 8.96488694300257
+      "lastValue": 2.5972906,
+      "ytdReturn": 12.329579370414079
     },
     {
       "key": "PEFORMF BZ EQUITY",
@@ -131,8 +131,8 @@
       "shortLabel": "Performa",
       "color": "#0d9488",
       "firstValue": 6.510626,
-      "lastValue": 7.382994,
-      "ytdReturn": 13.39914164935907
+      "lastValue": 7.836839,
+      "ytdReturn": 20.369976711916806
     },
     {
       "key": "MSQUARE BZ EQUITY",
@@ -140,8 +140,8 @@
       "shortLabel": "M Square",
       "color": "#ea580c",
       "firstValue": 6.002764,
-      "lastValue": 6.31405,
-      "ytdReturn": 5.185711115746017
+      "lastValue": 6.490903,
+      "ytdReturn": 8.131903902935388
     },
     {
       "key": "SQUAMAS BZ EQUITY",
@@ -149,8 +149,8 @@
       "shortLabel": "Squadra",
       "color": "#4f46e5",
       "firstValue": 1652.185564,
-      "lastValue": 1734.450622,
-      "ytdReturn": 4.9791657663945
+      "lastValue": 1819.652019,
+      "ytdReturn": 10.136056061073283
     },
     {
       "key": "ABSPAR2 BZ EQUITY",
@@ -158,8 +158,8 @@
       "shortLabel": "Absolute",
       "color": "#16a34a",
       "firstValue": 1.703167,
-      "lastValue": 1.8197167,
-      "ytdReturn": 6.843116382597825
+      "lastValue": 1.9342804,
+      "ytdReturn": 13.569626466459251
     },
     {
       "key": "3GRLBMS BZ EQUITY",
@@ -167,8 +167,8 @@
       "shortLabel": "3G Radar",
       "color": "#e11d48",
       "firstValue": 10.077516,
-      "lastValue": 11.948459,
-      "ytdReturn": 18.565517534281263
+      "lastValue": 12.787112,
+      "ytdReturn": 26.887538556128334
     },
     {
       "key": "POLACOE BZ EQUITY",
@@ -185,8 +185,8 @@
       "shortLabel": "Dryno",
       "color": "#a16207",
       "firstValue": 98.706003,
-      "lastValue": 113.221879,
-      "ytdReturn": 14.706173443169423
+      "lastValue": 118.50161,
+      "ytdReturn": 20.055119646573072
     },
     {
       "key": "BOGARIV BZ EQUITY",
@@ -194,8 +194,8 @@
       "shortLabel": "Bogari",
       "color": "#334155",
       "firstValue": 3378.579232,
-      "lastValue": 3609.222553,
-      "ytdReturn": 6.826636439822886
+      "lastValue": 3745.381056,
+      "ytdReturn": 10.856688531257742
     },
     {
       "key": "IPPRTAC BZ EQUITY",
@@ -203,8 +203,8 @@
       "shortLabel": "IP Participaçõ",
       "color": "#7e22ce",
       "firstValue": 106.062878,
-      "lastValue": 99.082299,
-      "ytdReturn": -6.581547787153196
+      "lastValue": 101.984627,
+      "ytdReturn": -3.8451257187269605
     },
     {
       "key": "CONMASF BZ Equity",
@@ -212,8 +212,8 @@
       "shortLabel": "Conquest",
       "color": "#0369a1",
       "firstValue": 7.001588,
-      "lastValue": 7.283376,
-      "ytdReturn": 4.024629841116045
+      "lastValue": 7.60914,
+      "ytdReturn": 8.6773457678458
     }
   ],
   "series": [
@@ -1781,49 +1781,145 @@
       "date": "2026-04-07",
       "BZDIOVIN Index": 56226.48,
       "IBOV Index": 188258.91,
-      "RPDRFIA BZ EQUITY": 2.789076,
-      "DYNCODO BZ EQUITY": 1987.026138,
-      "SPXFALC BZ EQUITY": 8.1667482,
-      "TRUXILB BZ EQUITY": 3.150779,
-      "NACFFIA BZ EQUITY": 4.5511499,
-      "ATMOSAC BZ EQUITY": 1174.9096743,
-      "STUFICF BZ EQUITY": 4.3055824,
-      "BSCAPLB BZ EQUITY": 3.359573,
-      "CSH2182 BZ EQUITY": 2.519492,
-      "PEFORMF BZ EQUITY": 7.382994,
-      "MSQUARE BZ EQUITY": 6.31405,
-      "SQUAMAS BZ EQUITY": 1734.450622,
-      "ABSPAR2 BZ EQUITY": 1.8197167,
-      "3GRLBMS BZ EQUITY": 11.948459,
+      "RPDRFIA BZ EQUITY": 2.782035,
+      "DYNCODO BZ EQUITY": 1975.994898,
+      "SPXFALC BZ EQUITY": 8.1515269,
+      "TRUXILB BZ EQUITY": 3.155916,
+      "NACFFIA BZ EQUITY": 4.5442692,
+      "ATMOSAC BZ EQUITY": 1175.6018965,
+      "STUFICF BZ EQUITY": 4.3044385,
+      "BSCAPLB BZ EQUITY": 3.32087,
+      "CSH2182 BZ EQUITY": 2.5023429,
+      "PEFORMF BZ EQUITY": 7.370987,
+      "MSQUARE BZ EQUITY": 6.304241,
+      "SQUAMAS BZ EQUITY": 1746.608935,
+      "ABSPAR2 BZ EQUITY": 1.8265382,
+      "3GRLBMS BZ EQUITY": 11.999345,
       "POLACOE BZ EQUITY": 7.711422,
-      "DRYBINC BZ EQUITY": 113.221879,
-      "BOGARIV BZ EQUITY": 3609.222553,
-      "IPPRTAC BZ EQUITY": 99.082299,
-      "CONMASF BZ Equity": 7.283376
+      "DRYBINC BZ EQUITY": 113.017578,
+      "BOGARIV BZ EQUITY": 3611.934649,
+      "IPPRTAC BZ EQUITY": 98.950703,
+      "CONMASF BZ Equity": 7.267326
     },
     {
       "date": "2026-04-08",
       "BZDIOVIN Index": 56256.99,
-      "IBOV Index": 191922.86,
-      "RPDRFIA BZ EQUITY": 2.789076,
-      "DYNCODO BZ EQUITY": 1987.026138,
-      "SPXFALC BZ EQUITY": 8.1667482,
-      "TRUXILB BZ EQUITY": 3.150779,
-      "NACFFIA BZ EQUITY": 4.5511499,
-      "ATMOSAC BZ EQUITY": 1174.9096743,
-      "STUFICF BZ EQUITY": 4.3055824,
-      "BSCAPLB BZ EQUITY": 3.359573,
-      "CSH2182 BZ EQUITY": 2.519492,
-      "PEFORMF BZ EQUITY": 7.382994,
-      "MSQUARE BZ EQUITY": 6.31405,
-      "SQUAMAS BZ EQUITY": 1734.450622,
-      "ABSPAR2 BZ EQUITY": 1.8197167,
-      "3GRLBMS BZ EQUITY": 11.948459,
+      "IBOV Index": 192201.16,
+      "RPDRFIA BZ EQUITY": 2.821114,
+      "DYNCODO BZ EQUITY": 2025.269823,
+      "SPXFALC BZ EQUITY": 8.2158124,
+      "TRUXILB BZ EQUITY": 3.321463,
+      "NACFFIA BZ EQUITY": 4.6386748,
+      "ATMOSAC BZ EQUITY": 1214.3288495,
+      "STUFICF BZ EQUITY": 4.4445945,
+      "BSCAPLB BZ EQUITY": 3.403798,
+      "CSH2182 BZ EQUITY": 2.5611928,
+      "PEFORMF BZ EQUITY": 7.533771,
+      "MSQUARE BZ EQUITY": 6.412545,
+      "SQUAMAS BZ EQUITY": 1788.54948,
+      "ABSPAR2 BZ EQUITY": 1.8880562,
+      "3GRLBMS BZ EQUITY": 12.400158,
       "POLACOE BZ EQUITY": 7.711422,
-      "DRYBINC BZ EQUITY": 113.221879,
-      "BOGARIV BZ EQUITY": 3609.222553,
-      "IPPRTAC BZ EQUITY": 99.082299,
-      "CONMASF BZ Equity": 7.283376
+      "DRYBINC BZ EQUITY": 116.051764,
+      "BOGARIV BZ EQUITY": 3687.928565,
+      "IPPRTAC BZ EQUITY": 101.989905,
+      "CONMASF BZ Equity": 7.494398
+    },
+    {
+      "date": "2026-04-09",
+      "BZDIOVIN Index": 56287.52,
+      "IBOV Index": 195129.25,
+      "RPDRFIA BZ EQUITY": 2.878943,
+      "DYNCODO BZ EQUITY": 2042.076782,
+      "SPXFALC BZ EQUITY": 8.2941615,
+      "TRUXILB BZ EQUITY": 3.380146,
+      "NACFFIA BZ EQUITY": 4.7176561,
+      "ATMOSAC BZ EQUITY": 1231.344012,
+      "STUFICF BZ EQUITY": 4.502569,
+      "BSCAPLB BZ EQUITY": 3.452686,
+      "CSH2182 BZ EQUITY": 2.5993843,
+      "PEFORMF BZ EQUITY": 7.762526,
+      "MSQUARE BZ EQUITY": 6.471955,
+      "SQUAMAS BZ EQUITY": 1813.334616,
+      "ABSPAR2 BZ EQUITY": 1.9170328,
+      "3GRLBMS BZ EQUITY": 12.673297,
+      "POLACOE BZ EQUITY": 7.711422,
+      "DRYBINC BZ EQUITY": 117.718424,
+      "BOGARIV BZ EQUITY": 3740.657649,
+      "IPPRTAC BZ EQUITY": 102.498548,
+      "CONMASF BZ Equity": 7.60914
+    },
+    {
+      "date": "2026-04-10",
+      "BZDIOVIN Index": 56318.07,
+      "IBOV Index": 197323.87,
+      "RPDRFIA BZ EQUITY": 2.868955,
+      "DYNCODO BZ EQUITY": 2052.349647,
+      "SPXFALC BZ EQUITY": 8.3187708,
+      "TRUXILB BZ EQUITY": 3.437302,
+      "NACFFIA BZ EQUITY": 4.7143252,
+      "ATMOSAC BZ EQUITY": 1238.1547551,
+      "STUFICF BZ EQUITY": 4.5131744,
+      "BSCAPLB BZ EQUITY": 3.481031,
+      "CSH2182 BZ EQUITY": 2.5972906,
+      "PEFORMF BZ EQUITY": 7.836839,
+      "MSQUARE BZ EQUITY": 6.490903,
+      "SQUAMAS BZ EQUITY": 1819.652019,
+      "ABSPAR2 BZ EQUITY": 1.9342804,
+      "3GRLBMS BZ EQUITY": 12.787112,
+      "POLACOE BZ EQUITY": 7.711422,
+      "DRYBINC BZ EQUITY": 118.50161,
+      "BOGARIV BZ EQUITY": 3745.381056,
+      "IPPRTAC BZ EQUITY": 101.984627,
+      "CONMASF BZ Equity": 7.60914
+    },
+    {
+      "date": "2026-04-13",
+      "BZDIOVIN Index": 56348.63,
+      "IBOV Index": 198000.71,
+      "RPDRFIA BZ EQUITY": 2.868955,
+      "DYNCODO BZ EQUITY": 2052.349647,
+      "SPXFALC BZ EQUITY": 8.3187708,
+      "TRUXILB BZ EQUITY": 3.437302,
+      "NACFFIA BZ EQUITY": 4.7143252,
+      "ATMOSAC BZ EQUITY": 1238.1547551,
+      "STUFICF BZ EQUITY": 4.5131744,
+      "BSCAPLB BZ EQUITY": 3.481031,
+      "CSH2182 BZ EQUITY": 2.5972906,
+      "PEFORMF BZ EQUITY": 7.836839,
+      "MSQUARE BZ EQUITY": 6.490903,
+      "SQUAMAS BZ EQUITY": 1819.652019,
+      "ABSPAR2 BZ EQUITY": 1.9342804,
+      "3GRLBMS BZ EQUITY": 12.787112,
+      "POLACOE BZ EQUITY": 7.711422,
+      "DRYBINC BZ EQUITY": 118.50161,
+      "BOGARIV BZ EQUITY": 3745.381056,
+      "IPPRTAC BZ EQUITY": 101.984627,
+      "CONMASF BZ Equity": 7.60914
+    },
+    {
+      "date": "2026-04-14",
+      "BZDIOVIN Index": 56379.21,
+      "IBOV Index": 199295.95,
+      "RPDRFIA BZ EQUITY": 2.868955,
+      "DYNCODO BZ EQUITY": 2052.349647,
+      "SPXFALC BZ EQUITY": 8.3187708,
+      "TRUXILB BZ EQUITY": 3.437302,
+      "NACFFIA BZ EQUITY": 4.7143252,
+      "ATMOSAC BZ EQUITY": 1238.1547551,
+      "STUFICF BZ EQUITY": 4.5131744,
+      "BSCAPLB BZ EQUITY": 3.481031,
+      "CSH2182 BZ EQUITY": 2.5972906,
+      "PEFORMF BZ EQUITY": 7.836839,
+      "MSQUARE BZ EQUITY": 6.490903,
+      "SQUAMAS BZ EQUITY": 1819.652019,
+      "ABSPAR2 BZ EQUITY": 1.9342804,
+      "3GRLBMS BZ EQUITY": 12.787112,
+      "POLACOE BZ EQUITY": 7.711422,
+      "DRYBINC BZ EQUITY": 118.50161,
+      "BOGARIV BZ EQUITY": 3745.381056,
+      "IPPRTAC BZ EQUITY": 101.984627,
+      "CONMASF BZ Equity": 7.60914
     }
   ]
 }

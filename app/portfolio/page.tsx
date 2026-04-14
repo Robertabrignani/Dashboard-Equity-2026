@@ -54,7 +54,7 @@ export default function PortfolioPage() {
   const weights = portfolio?.weights ?? [];
   const summary = portfolio?.summary ?? {};
 
-  const chartSeries = rawSeries.slice(-252);
+  const chartSeries = rawSeries.slice(-252 * 5);
 
   const portfolioValues = chartSeries.map((item) =>
     item.portfolioNav != null && Number.isFinite(item.portfolioNav) ? item.portfolioNav : null
@@ -89,56 +89,88 @@ export default function PortfolioPage() {
         </p>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-3">
         <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            1Y Anualizado
+          <div className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            1 Ano
           </div>
-          <div className="mt-3 text-4xl font-bold text-emerald-600">
-            {formatPercent(summary.return1YAnn)}
-          </div>
-          <div className="mt-2 text-sm text-slate-500">
-            IBOV: {formatPercent(summary.ibov1YAnn)}
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span>Retorno</span>
+              <span className="font-semibold text-emerald-600">{formatPercent(summary.return1YAnn)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Sharpe</span>
+              <span className="font-semibold text-[#002d72]">
+                {(summary.sharpe1Y ?? 0).toLocaleString('pt-BR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Volatilidade</span>
+              <span className="font-semibold text-slate-700">{formatPercent(summary.vol1Y)}</span>
+            </div>
+            <div className="mt-2 border-t border-slate-200 pt-2 text-xs text-slate-500">
+              IBOV: {formatPercent(summary.ibov1YAnn)} | CDI: {formatPercent(summary.cdi1YAnn)}
+            </div>
           </div>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            3Y Anualizado
+          <div className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            3 Anos
           </div>
-          <div className="mt-3 text-4xl font-bold text-emerald-600">
-            {formatPercent(summary.return3YAnn)}
-          </div>
-          <div className="mt-2 text-sm text-slate-500">
-            CDI: {formatPercent(summary.cdi3YAnn)}
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span>Retorno</span>
+              <span className="font-semibold text-emerald-600">{formatPercent(summary.return3YAnn)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Sharpe</span>
+              <span className="font-semibold text-[#002d72]">
+                {(summary.sharpe3Y ?? 0).toLocaleString('pt-BR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Volatilidade</span>
+              <span className="font-semibold text-slate-700">{formatPercent(summary.vol3Y)}</span>
+            </div>
+            <div className="mt-2 border-t border-slate-200 pt-2 text-xs text-slate-500">
+              IBOV: {formatPercent(summary.ibov3YAnn)} | CDI: {formatPercent(summary.cdi3YAnn)}
+            </div>
           </div>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            5Y Anualizado
+          <div className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            5 Anos
           </div>
-          <div className="mt-3 text-4xl font-bold text-emerald-600">
-            {formatPercent(summary.return5YAnn)}
-          </div>
-          <div className="mt-2 text-sm text-slate-500">
-            IBOV: {formatPercent(summary.ibov5YAnn)} | CDI: {formatPercent(summary.cdi5YAnn)}
-          </div>
-        </div>
-
-        <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Risco
-          </div>
-          <div className="mt-3 text-xl font-bold text-[#002d72]">
-            Sharpe 1Y:{' '}
-            {(summary.sharpe1Y ?? 0).toLocaleString('pt-BR', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </div>
-          <div className="mt-2 text-sm text-slate-500">
-            Vol 360D: {formatPercent(summary.vol360D)} | DD 5Y: {formatPercent(summary.maxDrawdown5Y)}
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span>Retorno</span>
+              <span className="font-semibold text-emerald-600">{formatPercent(summary.return5YAnn)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Sharpe</span>
+              <span className="font-semibold text-[#002d72]">
+                {(summary.sharpe5Y ?? 0).toLocaleString('pt-BR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Volatilidade</span>
+              <span className="font-semibold text-slate-700">{formatPercent(summary.vol5Y)}</span>
+            </div>
+            <div className="mt-2 border-t border-slate-200 pt-2 text-xs text-slate-500">
+              IBOV: {formatPercent(summary.ibov5YAnn)} | CDI: {formatPercent(summary.cdi5YAnn)}
+            </div>
           </div>
         </div>
       </section>

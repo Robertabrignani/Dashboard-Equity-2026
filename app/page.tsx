@@ -3,7 +3,7 @@ import data from '@/data/screening.json';
 
 function formatPercent(value: number | null | undefined) {
   if (value == null || !Number.isFinite(value)) return '-';
-  return `${value >= 0 ? '+' : ''}${value.toLocaleString('pt-BR', {
+  return `${value >= 0 ? '+' : ''}${(value * 100).toLocaleString('pt-BR', {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   })}%`;
@@ -20,6 +20,14 @@ function formatWeight(value: number | null | undefined) {
     style: 'percent',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
+  });
+}
+
+function formatNumber(value: number | null | undefined, digits = 2) {
+  if (value == null || !Number.isFinite(value)) return '-';
+  return value.toLocaleString('pt-BR', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
   });
 }
 
@@ -45,7 +53,8 @@ export default function HomePage() {
               Equity Dashboard — Screening de FIAs
             </h1>
             <p className="mt-2 text-sm text-slate-500">
-              Última atualização: <span className="font-semibold text-slate-700">{formatDate(data.updatedAt)}</span>
+              Última atualização:{' '}
+              <span className="font-semibold text-slate-700">{formatDate(data.updatedAt)}</span>
             </p>
           </div>
 
@@ -61,46 +70,47 @@ export default function HomePage() {
             Fundos monitorados
           </div>
           <div className="mt-3 text-4xl font-bold text-[#002d72]">{metricCount}</div>
-          <div className="mt-2 text-sm text-slate-500">Inclui benchmarks e fundos do screening</div>
+          <div className="mt-2 text-sm text-slate-500">
+            Inclui benchmarks e fundos do screening
+          </div>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Portfolio 1Y Anualizado
+            Portfolio 1Y
           </div>
           <div className="mt-3 text-4xl font-bold text-emerald-600">
-            {formatPercent((portfolioSummary.return1YAnn ?? 0) * 100)}
+            {formatPercent(portfolioSummary.return1YAnn)}
           </div>
           <div className="mt-2 text-sm text-slate-500">
-            IBOV: {formatPercent((portfolioSummary.ibov1YAnn ?? 0) * 100)} | CDI:{' '}
-            {formatPercent((portfolioSummary.cdi1YAnn ?? 0) * 100)}
+            Sharpe: {formatNumber(portfolioSummary.sharpe1Y)} | Vol:{' '}
+            {formatPercent(portfolioSummary.vol1Y)}
           </div>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Portfolio 5Y Anualizado
+            Portfolio 3Y
           </div>
           <div className="mt-3 text-4xl font-bold text-emerald-600">
-            {formatPercent((portfolioSummary.return5YAnn ?? 0) * 100)}
+            {formatPercent(portfolioSummary.return3YAnn)}
           </div>
           <div className="mt-2 text-sm text-slate-500">
-            Máx DD 5Y: {formatPercent((portfolioSummary.maxDrawdown5Y ?? 0) * 100)}
+            Sharpe: {formatNumber(portfolioSummary.sharpe3Y)} | Vol:{' '}
+            {formatPercent(portfolioSummary.vol3Y)}
           </div>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Portfolio Sharpe 1Y
+            Portfolio 5Y
           </div>
-          <div className="mt-3 text-4xl font-bold text-[#002d72]">
-            {(portfolioSummary.sharpe1Y ?? 0).toLocaleString('pt-BR', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
+          <div className="mt-3 text-4xl font-bold text-emerald-600">
+            {formatPercent(portfolioSummary.return5YAnn)}
           </div>
           <div className="mt-2 text-sm text-slate-500">
-            Vol 360D: {formatPercent((portfolioSummary.vol360D ?? 0) * 100)}
+            Sharpe: {formatNumber(portfolioSummary.sharpe5Y)} | Vol:{' '}
+            {formatPercent(portfolioSummary.vol5Y)}
           </div>
         </div>
       </section>
@@ -137,13 +147,10 @@ export default function HomePage() {
                       })}
                     </td>
                     <td className="py-3 pr-4 text-emerald-600">
-                      {formatPercent((row.metrics?.return1Y ?? 0) * 100)}
+                      {formatPercent(row.metrics?.return1Y)}
                     </td>
                     <td className="py-3 pr-4 text-slate-600">
-                      {(row.metrics?.sharpe1Y ?? 0).toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {formatNumber(row.metrics?.sharpe1Y)}
                     </td>
                   </tr>
                 ))}
@@ -174,7 +181,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-4">
         <Link
           href="/metrics"
           className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md"
@@ -202,6 +209,16 @@ export default function HomePage() {
           <div className="text-lg font-bold text-[#002d72]">Portfolio</div>
           <p className="mt-2 text-sm text-slate-500">
             Pesos atuais, métricas consolidadas e gráfico de performance do portfólio versus IBOV e CDI.
+          </p>
+        </Link>
+
+        <Link
+          href="/backtest"
+          className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          <div className="text-lg font-bold text-[#002d72]">Backtest</div>
+          <p className="mt-2 text-sm text-slate-500">
+            Compare os métodos HRP e MPT, com pesos, performance histórica e correlação.
           </p>
         </Link>
       </section>
