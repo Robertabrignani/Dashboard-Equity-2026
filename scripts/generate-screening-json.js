@@ -14,6 +14,8 @@ const {
   SQL_START_DATE,
 } = require('../config/screening.config');
 
+const BUSINESS_DAY_LAG = 2;
+
 function normalizeDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
@@ -498,6 +500,88 @@ function buildBacktestBlock(rows, weights, cdiSqlColumn) {
   };
 }
 
+function subtractBusinessDaysFallback(date, days) {
+  const result = new Date(date);
+  let remaining = days;
+
+  while (remaining > 0) {
+    result.setDate(result.getDate() - 1);
+    const day = result.getDay();
+    if (day !== 0 && day !== 6) {
+      remaining -= 1;
+    }
+  }
+
+  return normalizeDate(result);
+}
+
+async function getCutoffDateFromCalendar(pool, fallbackDate, businessDayLag) {
+  const candidateQueries = [
+    `
+      SELECT TOP 1 CAST([date] AS date) AS cutoffDate
+      FROM [RDP_Database].[dbo].[Tbl_StaticData_Calendar]
+      WHERE CAST([date] AS date) < CAST(GETDATE() AS date)
+        AND [IsBusinessDay] = 1
+      ORDER BY [date] DESC
+      OFFSET ${Math.max(businessDayLag - 1, 0)} ROWS
+    `,
+    `
+      SELECT TOP 1 CAST([Date] AS date) AS cutoffDate
+      FROM [RDP_Database].[dbo].[Tbl_StaticData_Calendar]
+      WHERE CAST([Date] AS date) < CAST(GETDATE() AS date)
+        AND [IsBusinessDay] = 1
+      ORDER BY [Date] DESC
+      OFFSET ${Math.max(businessDayLag - 1, 0)} ROWS
+    `,
+    `
+      WITH BusinessDays AS (
+        SELECT
+          CAST([date] AS date) AS cutoffDate,
+          ROW_NUMBER() OVER (ORDER BY [date] DESC) AS rn
+        FROM [RDP_Database].[dbo].[Tbl_StaticData_Calendar]
+        WHERE CAST([date] AS date) < CAST(GETDATE() AS date)
+          AND [IsBusinessDay] = 1
+      )
+      SELECT cutoffDate
+      FROM BusinessDays
+      WHERE rn = ${businessDayLag}
+    `,
+    `
+      WITH BusinessDays AS (
+        SELECT
+          CAST([Date] AS date) AS cutoffDate,
+          ROW_NUMBER() OVER (ORDER BY [Date] DESC) AS rn
+        FROM [RDP_Database].[dbo].[Tbl_StaticData_Calendar]
+        WHERE CAST([Date] AS date) < CAST(GETDATE() AS date)
+          AND [IsBusinessDay] = 1
+      )
+      SELECT cutoffDate
+      FROM BusinessDays
+      WHERE rn = ${businessDayLag}
+    `,
+  ];
+
+  for (const query of candidateQueries) {
+    try {
+      const result = await pool.request().query(query);
+      const row = result.recordset?.[0];
+      if (row?.cutoffDate) {
+        return {
+          cutoffDate: normalizeDate(row.cutoffDate),
+          source: 'Tbl_StaticData_Calendar',
+        };
+      }
+    } catch (error) {
+      // tenta próxima variação de schema
+    }
+  }
+
+  return {
+    cutoffDate: subtractBusinessDaysFallback(fallbackDate, businessDayLag),
+    source: 'fallback_weekdays_only',
+  };
+}
+
 async function main() {
   const config = {
     user: process.env.DB_USER,
@@ -528,6 +612,10 @@ async function main() {
   `;
 
   const pool = await sql.connect(config);
+
+  const cutoffInfo = await getCutoffDateFromCalendar(pool, new Date(), BUSINESS_DAY_LAG);
+  const cutoffDate = cutoffInfo.cutoffDate;
+
   const result = await pool.request().query(query);
   await pool.close();
 
@@ -548,9 +636,13 @@ async function main() {
 
       return normalized;
     })
-    .filter((row) => row.date);
+    .filter((row) => row.date && row.date <= cutoffDate);
 
   const rows = dedupeConsecutiveEqualRows(normalizedRows);
+
+  if (!rows.length) {
+    throw new Error(`Nenhuma linha restante após aplicar cutoff em ${cutoffDate}.`);
+  }
 
   const cdiSeries = buildSeries(rows, CDI_SQL_COLUMN);
   const cdiReturnSeries = buildReturnSeriesFromLevelSeries(cdiSeries);
@@ -692,10 +784,7 @@ async function main() {
   const mptBlock = buildBacktestBlock(rows, BACKTEST_MPT_WEIGHTS, CDI_SQL_COLUMN);
 
   const correlationAssetColumns = Array.from(
-    new Set([
-      ...Object.keys(BACKTEST_HRP_WEIGHTS),
-      ...Object.keys(BACKTEST_MPT_WEIGHTS),
-    ])
+    new Set([...Object.keys(BACKTEST_HRP_WEIGHTS), ...Object.keys(BACKTEST_MPT_WEIGHTS)])
   ).filter((key) => key !== 'CASH');
 
   const returnSeriesByAsset = {};
@@ -717,11 +806,16 @@ async function main() {
 
   const screeningJson = {
     updatedAt: rows[rows.length - 1]?.date ?? null,
+    generatedAt: new Date().toISOString(),
     source: {
       table: '[RDP_Database].[dbo].[Tbl_VariableData_BloombergMatrix]',
       startDate: SQL_START_DATE,
-      rowCountRaw: normalizedRows.length,
+      rowCountRaw: rawRows.length,
+      rowCountAfterCutoff: normalizedRows.length,
       rowCountFiltered: rows.length,
+      cutoffMode: `D-${BUSINESS_DAY_LAG} útil`,
+      cutoffDate,
+      cutoffSource: cutoffInfo.source,
     },
     weights: {
       ranking: DEFAULT_WEIGHTS,
@@ -790,8 +884,13 @@ async function main() {
   fs.writeFileSync(outputPath, JSON.stringify(screeningJson, null, 2), 'utf8');
 
   console.log(`screening.json gerado com sucesso em: ${outputPath}`);
-  console.log(`Linhas brutas: ${normalizedRows.length}`);
-  console.log(`Linhas filtradas: ${rows.length}`);
+  console.log(`Linhas brutas: ${rawRows.length}`);
+  console.log(`Linhas após cutoff: ${normalizedRows.length}`);
+  console.log(`Linhas finais após dedupe: ${rows.length}`);
+  console.log(`cutoffMode: D-${BUSINESS_DAY_LAG} útil`);
+  console.log(`cutoffDate final: ${cutoffDate}`);
+  console.log(`updatedAt final: ${screeningJson.updatedAt}`);
+  console.log(`cutoffSource: ${cutoffInfo.source}`);
 }
 
 main().catch((error) => {
