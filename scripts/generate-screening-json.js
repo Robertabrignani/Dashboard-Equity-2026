@@ -14,7 +14,7 @@ const {
   SQL_START_DATE,
 } = require('../config/screening.config');
 
-const BUSINESS_DAY_LAG = 2;
+const BUSINESS_DAY_LAG = 1;
 
 function normalizeDate(value) {
   const date = new Date(value);

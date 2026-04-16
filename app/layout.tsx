@@ -2,7 +2,7 @@ import './globals.css';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Equity Dashboard',
+  title: 'Portfolio RDP TOTAL RETURN',
   description: 'Screening de FIAs',
 };
 
@@ -13,26 +13,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className="bg-slate-100 text-slate-900">
-        <header className="sticky top-0 z-50 border-b border-slate-800 bg-[#002d72] text-white shadow-sm">
+      <body className="bg-[#D9D9D9] text-slate-900">
+        <header className="sticky top-0 z-50 border-b border-[#003C4C] bg-[#003C4C] text-white shadow-sm">
           <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4">
             <div className="flex items-center gap-6">
               <Link href="/" className="text-sm font-bold tracking-wide">
-                RIO DAS PEDRAS MFO
+                PORTFOLIO RDP TOTAL RETURN
               </Link>
 
               <nav className="flex items-center gap-5 text-sm">
                 <Link href="/" className="text-slate-100 hover:text-white">
-                  Home
+                  Portfolio
                 </Link>
                 <Link href="/metrics" className="text-slate-200 hover:text-white">
                   Metrics
                 </Link>
                 <Link href="/ranking" className="text-slate-200 hover:text-white">
                   Ranking
-                </Link>
-                <Link href="/portfolio" className="text-slate-200 hover:text-white">
-                  Portfolio
                 </Link>
                 <Link href="/backtest" className="text-slate-200 hover:text-white">
                   Backtest
@@ -41,7 +38,7 @@ export default function RootLayout({
             </div>
 
             <div className="text-xs font-medium text-slate-300">
-              Screening de Fundos de Ações
+              Rio das Pedras Investimentos
             </div>
           </div>
         </header>
