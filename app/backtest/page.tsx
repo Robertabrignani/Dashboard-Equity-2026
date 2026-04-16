@@ -1,9 +1,6 @@
-'use client';
-
-import { useMemo, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import data from '@/data/screening.json';
-
-type BacktestMode = 'hrp' | 'mpt';
 
 function formatPercent(value: number | null | undefined) {
   if (value == null || !Number.isFinite(value)) return '-';
@@ -11,6 +8,16 @@ function formatPercent(value: number | null | undefined) {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   })}%`;
+}
+
+function formatDate(dateValue: string | null | undefined) {
+  if (!dateValue) return '-';
+  return new Date(dateValue).toLocaleDateString('pt-BR');
+}
+
+function formatDateTime(dateValue: string | null | undefined) {
+  if (!dateValue) return '-';
+  return new Date(dateValue).toLocaleString('pt-BR');
 }
 
 function formatWeight(value: number | null | undefined) {
@@ -22,291 +29,239 @@ function formatWeight(value: number | null | undefined) {
   });
 }
 
-type BacktestSeriesRow = {
-  date: string;
-  nav: number | null;
-  drawdown: number | null;
-  dailyReturn: number | null;
-};
-
-function buildPath(
-  values: Array<number | null>,
-  width: number,
-  height: number,
-  globalMin: number,
-  globalMax: number
-) {
-  const validPoints = values
-    .map((value, index) => ({ value, index }))
-    .filter((point) => point.value != null && Number.isFinite(point.value));
-
-  if (!validPoints.length) return '';
-
-  const range = globalMax - globalMin || 1;
-
-  return validPoints
-    .map((point, pathIndex) => {
-      const x = (point.index / Math.max(values.length - 1, 1)) * width;
-      const y = height - (((point.value as number) - globalMin) / range) * height;
-      return `${pathIndex === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
-    })
-    .join(' ');
+function formatNumber(value: number | null | undefined, digits = 2) {
+  if (value == null || !Number.isFinite(value)) return '-';
+  return value.toLocaleString('pt-BR', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 }
 
-function heatmapClass(value: number | null | undefined) {
-  if (value == null || !Number.isFinite(value)) return 'bg-slate-100 text-slate-500';
-  if (value >= 0.8) return 'bg-emerald-700 text-white';
-  if (value >= 0.6) return 'bg-emerald-500 text-white';
-  if (value >= 0.4) return 'bg-emerald-300 text-emerald-950';
-  if (value >= 0.2) return 'bg-lime-200 text-lime-950';
-  if (value >= 0) return 'bg-slate-100 text-slate-800';
-  if (value >= -0.2) return 'bg-amber-100 text-amber-900';
-  if (value >= -0.4) return 'bg-orange-200 text-orange-950';
-  if (value >= -0.6) return 'bg-rose-300 text-rose-950';
-  return 'bg-rose-600 text-white';
-}
+export default function HomePage() {
+  const topRanked = [...(data.ranking?.rows ?? [])]
+    .filter((row) => !row.isBenchmark && row.order != null)
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+    .slice(0, 5);
 
-export default function BacktestPage() {
-  const [mode, setMode] = useState<BacktestMode>('hrp');
-
-  const backtestData = useMemo(() => {
-    return mode === 'hrp' ? data.backtest?.hrp : data.backtest?.mpt;
-  }, [mode]);
-
-  const weights = backtestData?.weights ?? [];
-  const summary = backtestData?.summary ?? {};
-  const series = (backtestData?.series ?? []) as BacktestSeriesRow[];
-
-  const correlation = data.backtest?.correlation ?? {
-    labels: [],
-    matrix: [],
-    linkage: [],
-  };
-
-  const chartSeries = series.slice(-252 * 5);
-  const navValues = chartSeries.map((item) =>
-    item.nav != null && Number.isFinite(item.nav) ? item.nav : null
-  );
-
-  const allValidValues = navValues.filter(
-    (value): value is number => value != null && Number.isFinite(value)
-  );
-
-  const width = 1100;
-  const height = 340;
-
-  const globalMin = allValidValues.length ? Math.min(...allValidValues) : 0;
-  const globalMax = allValidValues.length ? Math.max(...allValidValues) : 1;
-
-  const navPath = buildPath(navValues, width, height, globalMin, globalMax);
+  const selectedWeights = data.portfolio?.weights ?? [];
+  const portfolioSummary = data.portfolio?.summary ?? {};
+  const metricCount = data.metrics?.length ?? 0;
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-3xl bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-[#002d72]">Backtest</h1>
-            <p className="mt-2 text-sm text-slate-500">
-              Backtest histórico com dois métodos de alocação: HRP e MPT.
-            </p>
+    <div className="space-y-6 bg-[#D9D9D9] min-h-screen -mx-6 -mt-8 px-6 py-8">
+      <section className="rounded-[28px] border border-[#BFBFBF] bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex items-start gap-5">
+            <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl bg-[#003C4C]/5 p-2 ring-1 ring-[#BFBFBF]">
+              <Image
+                src="/logo-rdp.png"
+                alt="Rio das Pedras Investimentos"
+                fill
+                className="object-contain p-2"
+                priority
+              />
+            </div>
+
+            <div>
+              <div className="mb-3 inline-flex rounded-full bg-[#A6BBCA] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-[#003C4C]">
+                Dados calculados a partir da base
+              </div>
+
+              <h1 className="text-4xl font-bold tracking-tight text-[#003C4C]">
+                Equity Dashboard — Screening de FIAs
+              </h1>
+
+              <div className="mt-4 space-y-1 text-sm text-[#52768D]">
+                <p>
+                  Data de referência dos dados:{' '}
+                  <span className="font-semibold text-[#003C4C]">
+                    {formatDate(data.updatedAt)}
+                  </span>
+                </p>
+                <p>
+                  Último update do site:{' '}
+                  <span className="font-semibold text-[#003C4C]">
+                    {formatDateTime((data as { generatedAt?: string | null }).generatedAt)}
+                  </span>
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
-            <button
-              type="button"
-              onClick={() => setMode('hrp')}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-                mode === 'hrp'
-                  ? 'bg-[#002d72] text-white'
-                  : 'bg-white text-slate-700'
-              }`}
-            >
-              HRP
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('mpt')}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-                mode === 'mpt'
-                  ? 'bg-[#002d72] text-white'
-                  : 'bg-white text-slate-700'
-              }`}
-            >
-              MPT
-            </button>
+          <div className="rounded-2xl border border-[#BFBFBF] bg-[#F7F8FA] px-5 py-4 text-sm text-[#52768D]">
+            Fonte:{' '}
+            <span className="font-semibold text-[#003C4C]">
+              Tbl_VariableData_BloombergMatrix
+            </span>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Retorno anualizado 5Y
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-[28px] border border-[#BFBFBF] bg-white p-6 shadow-sm">
+          <div className="text-sm font-semibold uppercase tracking-[0.08em] text-[#52768D]">
+            Fundos monitorados
           </div>
-          <div className="mt-3 text-4xl font-bold text-emerald-600">
-            {formatPercent(summary.return5YAnn)}
+          <div className="mt-4 text-5xl font-bold text-[#003C4C]">{metricCount}</div>
+          <div className="mt-3 text-sm text-[#808080]">
+            Inclui benchmarks e fundos do screening
           </div>
-          <div className="mt-2 text-sm text-slate-500">Baseado na série histórica do método</div>
         </div>
 
-        <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Volatilidade 5Y
+        <div className="rounded-[28px] border border-[#BFBFBF] bg-white p-6 shadow-sm">
+          <div className="text-sm font-semibold uppercase tracking-[0.08em] text-[#52768D]">
+            Portfolio 1Y
           </div>
-          <div className="mt-3 text-4xl font-bold text-[#002d72]">
-            {formatPercent(summary.vol5Y)}
+          <div className="mt-4 text-5xl font-bold text-[#003C4C]">
+            {formatPercent(portfolioSummary.return1YAnn)}
           </div>
-          <div className="mt-2 text-sm text-slate-500">Desvio padrão anualizado</div>
+          <div className="mt-3 text-sm text-[#808080]">
+            Sharpe: {formatNumber(portfolioSummary.sharpe1Y)} | Vol:{' '}
+            {formatPercent(portfolioSummary.vol1Y)}
+          </div>
         </div>
 
-        <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Máx drawdown 5Y
+        <div className="rounded-[28px] border border-[#BFBFBF] bg-white p-6 shadow-sm">
+          <div className="text-sm font-semibold uppercase tracking-[0.08em] text-[#52768D]">
+            Portfolio 3Y
           </div>
-          <div className="mt-3 text-4xl font-bold text-rose-600">
-            {formatPercent(summary.maxDrawdown5Y)}
+          <div className="mt-4 text-5xl font-bold text-[#003C4C]">
+            {formatPercent(portfolioSummary.return3YAnn)}
           </div>
-          <div className="mt-2 text-sm text-slate-500">Pior drawdown observado</div>
+          <div className="mt-3 text-sm text-[#808080]">
+            Sharpe: {formatNumber(portfolioSummary.sharpe3Y)} | Vol:{' '}
+            {formatPercent(portfolioSummary.vol3Y)}
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-[#BFBFBF] bg-white p-6 shadow-sm">
+          <div className="text-sm font-semibold uppercase tracking-[0.08em] text-[#52768D]">
+            Portfolio 5Y
+          </div>
+          <div className="mt-4 text-5xl font-bold text-[#003C4C]">
+            {formatPercent(portfolioSummary.return5YAnn)}
+          </div>
+          <div className="mt-3 text-sm text-[#808080]">
+            Sharpe: {formatNumber(portfolioSummary.sharpe5Y)} | Vol:{' '}
+            {formatPercent(portfolioSummary.vol5Y)}
+          </div>
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.9fr,1.1fr]">
-        <div className="rounded-3xl bg-white p-5 shadow-sm">
-          <div className="mb-4 border-b border-slate-200 pb-3 text-xl font-bold text-[#002d72]">
-            Pesos — {mode.toUpperCase()}
+      <section className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
+        <div className="rounded-[28px] border border-[#BFBFBF] bg-white p-6 shadow-sm">
+          <div className="mb-5 flex items-center justify-between border-b border-[#D9D9D9] pb-4">
+            <h2 className="text-2xl font-bold text-[#003C4C]">Top 5 do Ranking</h2>
+            <Link
+              href="/ranking"
+              className="text-sm font-semibold text-[#52768D] transition hover:text-[#003C4C]"
+            >
+              Ver tela completa
+            </Link>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#D9D9D9] text-left text-[#52768D]">
+                  <th className="pb-3 pr-4 font-semibold">Ordem</th>
+                  <th className="pb-3 pr-4 font-semibold">Fundo</th>
+                  <th className="pb-3 pr-4 font-semibold">Score</th>
+                  <th className="pb-3 pr-4 font-semibold">1Y</th>
+                  <th className="pb-3 pr-4 font-semibold">Sharpe 1Y</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topRanked.map((row) => (
+                  <tr key={row.sqlColumn} className="border-b border-[#F1F1F1]">
+                    <td className="py-3 pr-4 font-semibold text-[#003C4C]">{row.order}</td>
+                    <td className="py-3 pr-4 font-medium text-[#003C4C]">{row.name}</td>
+                    <td className="py-3 pr-4 text-[#52768D]">
+                      {row.aggregateScore?.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td className="py-3 pr-4 text-[#003C4C]">
+                      {formatPercent(row.metrics?.return1Y)}
+                    </td>
+                    <td className="py-3 pr-4 text-[#52768D]">
+                      {formatNumber(row.metrics?.sharpe1Y)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-[#BFBFBF] bg-white p-6 shadow-sm">
+          <div className="mb-5 flex items-center justify-between border-b border-[#D9D9D9] pb-4">
+            <h2 className="text-2xl font-bold text-[#003C4C]">Pesos do Portfólio</h2>
+            <Link
+              href="/portfolio"
+              className="text-sm font-semibold text-[#52768D] transition hover:text-[#003C4C]"
+            >
+              Ver tela completa
+            </Link>
           </div>
 
           <div className="space-y-3">
-            {weights.map((item) => (
+            {selectedWeights.map((item) => (
               <div
                 key={item.sqlColumn}
-                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                className="flex items-center justify-between rounded-2xl border border-[#D9D9D9] bg-[#F7F8FA] px-4 py-3"
               >
-                <span className="text-sm font-medium text-slate-800">{item.name}</span>
-                <span className="text-sm font-semibold text-[#002d72]">
+                <span className="text-sm font-medium text-[#003C4C]">{item.name}</span>
+                <span className="text-sm font-semibold text-[#52768D]">
                   {formatWeight(item.weight)}
                 </span>
               </div>
             ))}
           </div>
         </div>
-
-        <div className="rounded-3xl bg-white p-5 shadow-sm">
-          <div className="mb-4 border-b border-slate-200 pb-3 text-xl font-bold text-[#002d72]">
-            Performance histórica do backtest — {mode.toUpperCase()}
-          </div>
-
-          {allValidValues.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-sm text-slate-500">
-              Não há dados suficientes para desenhar o gráfico.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <svg
-                viewBox={`0 0 ${width} ${height}`}
-                className="h-[380px] w-full min-w-[950px] rounded-2xl bg-slate-50"
-              >
-                <path d={navPath} fill="none" stroke="#002d72" strokeWidth="3" />
-              </svg>
-            </div>
-          )}
-
-          <div className="mt-4 flex items-center gap-2 text-sm">
-            <span className="h-3 w-3 rounded-full bg-[#002d72]" />
-            <span>Backtest {mode.toUpperCase()}</span>
-          </div>
-        </div>
       </section>
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm">
-        <div className="mb-4 border-b border-slate-200 pb-3 text-xl font-bold text-[#002d72]">
-          Matriz de correlação
-        </div>
+      <section className="grid gap-4 md:grid-cols-4">
+        <Link
+          href="/metrics"
+          className="rounded-[28px] border border-[#BFBFBF] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-[#A6BBCA] hover:shadow-md"
+        >
+          <div className="text-xl font-bold text-[#003C4C]">Metrics</div>
+          <p className="mt-3 text-sm leading-6 text-[#808080]">
+            Todas as métricas por fundo, com quartis, benchmarks e fundos selecionados destacados.
+          </p>
+        </Link>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-[1000px] border-separate border-spacing-1 text-xs">
-            <thead>
-              <tr>
-                <th className="sticky left-0 bg-white p-2 text-left font-semibold text-slate-500">
-                  Fundo
-                </th>
-                {correlation.labels.map((label: string) => (
-                  <th
-                    key={label}
-                    className="min-w-[90px] p-2 text-center font-semibold text-slate-500"
-                  >
-                    {label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {correlation.matrix.map((row: Array<number | null>, rowIndex: number) => (
-                <tr key={correlation.labels[rowIndex] ?? rowIndex}>
-                  <td className="sticky left-0 bg-white p-2 font-semibold text-slate-700">
-                    {correlation.labels[rowIndex]}
-                  </td>
-                  {row.map((value, colIndex) => (
-                    <td
-                      key={`${rowIndex}-${colIndex}`}
-                      className={`rounded-lg p-2 text-center font-semibold ${heatmapClass(value)}`}
-                    >
-                      {value == null
-                        ? '-'
-                        : value.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+        <Link
+          href="/ranking"
+          className="rounded-[28px] border border-[#BFBFBF] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-[#A6BBCA] hover:shadow-md"
+        >
+          <div className="text-xl font-bold text-[#003C4C]">Ranking</div>
+          <p className="mt-3 text-sm leading-6 text-[#808080]">
+            Ajuste os pesos de cada métrica e recalcule o score ponderado em tempo real.
+          </p>
+        </Link>
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm">
-        <div className="mb-4 border-b border-slate-200 pb-3 text-xl font-bold text-[#002d72]">
-          Estrutura do dendrograma
-        </div>
+        <Link
+          href="/portfolio"
+          className="rounded-[28px] border border-[#BFBFBF] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-[#A6BBCA] hover:shadow-md"
+        >
+          <div className="text-xl font-bold text-[#003C4C]">Portfolio</div>
+          <p className="mt-3 text-sm leading-6 text-[#808080]">
+            Pesos atuais, métricas consolidadas e gráfico de performance do portfólio versus IBOV e CDI.
+          </p>
+        </Link>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-left text-slate-500">
-                <th className="pb-3 pr-4 font-semibold">Left</th>
-                <th className="pb-3 pr-4 font-semibold">Right</th>
-                <th className="pb-3 pr-4 font-semibold">Distance</th>
-                <th className="pb-3 pr-4 font-semibold">Size</th>
-              </tr>
-            </thead>
-            <tbody>
-              {correlation.linkage.map(
-                (
-                  item: { left: number; right: number; distance: number; size: number },
-                  index: number
-                ) => (
-                  <tr key={`${item.left}-${item.right}-${index}`} className="border-b border-slate-100">
-                    <td className="py-3 pr-4 text-slate-700">{item.left}</td>
-                    <td className="py-3 pr-4 text-slate-700">{item.right}</td>
-                    <td className="py-3 pr-4 text-slate-700">
-                      {item.distance.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 3,
-                        maximumFractionDigits: 3,
-                      })}
-                    </td>
-                    <td className="py-3 pr-4 text-slate-700">{item.size}</td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <p className="mt-4 text-sm text-slate-500">
-          Essa tabela traz a estrutura de linkage usada para o dendrograma.
-        </p>
+        <Link
+          href="/backtest"
+          className="rounded-[28px] border border-[#BFBFBF] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-[#A6BBCA] hover:shadow-md"
+        >
+          <div className="text-xl font-bold text-[#003C4C]">Backtest</div>
+          <p className="mt-3 text-sm leading-6 text-[#808080]">
+            Compare os métodos HRP e MPT, com pesos, performance histórica e correlação.
+          </p>
+        </Link>
       </section>
     </div>
   );
